@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="da4766a0-f94d-46bf-84d2-9164ef325d6e" name="更改" comment="" />
+    <list default="true" id="da4766a0-f94d-46bf-84d2-9164ef325d6e" name="更改" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/house_data/management/commands/import_house.py" beforeDir="false" afterPath="$PROJECT_DIR$/house_data/management/commands/import_house.py" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,6 +26,12 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "GuoFeng3"
+  }
+}]]></component>
   <component name="GithubPullRequestsUISettings"><![CDATA[{
   "selectedUrlAndAccountId": {
     "url": "https://github.com/GuoFeng3/python_final_backend.git",
@@ -106,7 +115,7 @@
       <workItem from="1766221670399" duration="617000" />
       <workItem from="1766294111535" duration="5556000" />
       <workItem from="1766308632223" duration="116000" />
-      <workItem from="1766311645155" duration="7995000" />
+      <workItem from="1766311645155" duration="9726000" />
     </task>
     <servers />
   </component>
