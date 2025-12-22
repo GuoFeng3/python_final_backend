@@ -583,3 +583,55 @@ def squaremeter_avgprice(request):
     ]
     
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False})
+
+def room_hall_any(request):
+    """
+    返回对应区划不同房型的成交量和平均单价，按照成交量排序
+    参数：district (行政区名，或 'all')
+    参数：city (可选)
+    """
+    district_name = request.GET.get('district') or request.GET.get('行政区名')
+    city = request.GET.get('city')
+    
+    if not district_name:
+        district_name = 'all'
+        
+    query = HouseDeal.objects.all()
+    if city:
+        query = query.filter(city=city)
+        
+    if district_name.lower() != 'all':
+        query = query.filter(district=district_name)
+        
+    data = query.values('layout', 'deal_price', 'area')
+    
+    df = pd.DataFrame(list(data))
+    
+    if df.empty:
+        return JsonResponse([], safe=False, json_dumps_params={'ensure_ascii': False})
+        
+    # 数据清洗
+    df = df[df['area'] > 0]
+    
+    # 计算单价
+    df['unit_price'] = df['deal_price'] * 10000 / df['area']
+    
+    # 分组统计
+    stats = df.groupby('layout').agg({
+        'unit_price': 'mean',
+        'area': 'count'
+    }).reset_index()
+    
+    # 重命名列
+    stats.columns = ['layout', 'avg_unit_price', 'count']
+    
+    # 排序：按成交量降序
+    stats = stats.sort_values(by='count', ascending=False)
+    
+    # 格式化
+    stats['avg_unit_price'] = stats['avg_unit_price'].round(2)
+    
+    # 转换为字典列表
+    result = stats.to_dict(orient='records')
+    
+    return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False})

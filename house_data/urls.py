@@ -20,4 +20,6 @@ urlpatterns = [
     path('direction-price/', views.direction_price, name='direction_price'),
     # 添加数据，csv或xlsx文件
     path('add-data/', views.add_data, name='add_data'),
+    # 对应区划不同房型的成交量和平均单价
+    path('room-hall-any/', views.room_hall_any, name='room_hall_any'),
 ]
