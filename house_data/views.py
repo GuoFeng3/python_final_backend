@@ -114,13 +114,18 @@ def total_any(request):
     """
     返回分析后的整体统计：平均单价、单价中位数、平均总价、总价中位数，平均面积
     参数：city (可选，默认所有或北京，根据需求。这里如果没传则统计所有，如果传了则统计该城市)
+    参数：district (行政区名，或 'all')
     """
     city = request.GET.get('city')
+    district = request.GET.get('district') or request.GET.get('行政区名')
     
     # 获取所有房屋数据的价格和面积
     query = HouseDeal.objects.all()
     if city:
         query = query.filter(city=city)
+        
+    if district and district.lower() != 'all':
+        query = query.filter(district=district)
         
     data = query.values('deal_price', 'area')
     
@@ -129,11 +134,11 @@ def total_any(request):
     
     if df.empty:
         return JsonResponse({
-            '平均单价': 0,
-            '单价中位数': 0,
-            '平均总价': 0,
-            '总价中位数': 0,
-            '平均面积': 0
+            'avg_unit_price': 0,
+            'median_unit_price': 0,
+            'avg_deal_price': 0,
+            'median_deal_price': 0,
+            'avg_area': 0
         }, json_dumps_params={'ensure_ascii': False})
 
     # 数据清洗：确保面积大于0
@@ -144,11 +149,11 @@ def total_any(request):
     
     # 计算统计指标
     stats = {
-        '平均单价': round(df['unit_price'].mean(), 2),
-        '单价中位数': round(df['unit_price'].median(), 2),
-        '平均总价': round(df['deal_price'].mean(), 2),
-        '总价中位数': round(df['deal_price'].median(), 2),
-        '平均面积': round(df['area'].mean(), 2)
+        'avg_unit_price': round(df['unit_price'].mean(), 2),
+        'median_unit_price': round(df['unit_price'].median(), 2),
+        'avg_deal_price': round(df['deal_price'].mean(), 2),
+        'median_deal_price': round(df['deal_price'].median(), 2),
+        'avg_area': round(df['area'].mean(), 2)
     }
     
     return JsonResponse(stats, json_dumps_params={'ensure_ascii': False})
@@ -182,14 +187,12 @@ def total_avg_price(request):
     # 按城区进行分组并计算平均单价
     district_stats = df.groupby('district')['unit_price'].mean().reset_index()
     
-    # 重命名列
-    district_stats.columns = ['城区', '平均单价']
     
     # 保留两位小数
-    district_stats['平均单价'] = district_stats['平均单价'].round(2)
+    district_stats['unit_price'] = district_stats['unit_price'].round(2)
     
     # 按平均单价从高到低排序
-    district_stats = district_stats.sort_values(by='平均单价', ascending=False)
+    district_stats = district_stats.sort_values(by='unit_price', ascending=False)
     
     # 转换为字典列表
     result = district_stats.to_dict(orient='records')
@@ -261,7 +264,7 @@ def quarter_trend(request):
     city = request.GET.get('city')
     
     if not district_name:
-        return JsonResponse({'error': '缺少参数：行政区名'}, status=400, json_dumps_params={'ensure_ascii': False})
+        district_name = 'all'
         
     # 根据参数获取数据
     query = HouseDeal.objects.all()
@@ -322,7 +325,7 @@ def month_trend(request):
     city = request.GET.get('city')
     
     if not district_name:
-        return JsonResponse({'error': '缺少参数：行政区名'}, status=400, json_dumps_params={'ensure_ascii': False})
+        district_name = 'all'
     
     query = HouseDeal.objects.all()
     if city:
@@ -379,7 +382,7 @@ def district_area_rank(request):
     city = request.GET.get('city')
     
     if not district_name:
-        return JsonResponse({'error': '缺少参数：行政区名'}, status=400, json_dumps_params={'ensure_ascii': False})
+        district_name = 'all'
         
     # 获取该行政区的所有交易数据
     query = HouseDeal.objects.all()
@@ -435,7 +438,7 @@ def predict_price(request):
     city = request.GET.get('city')
     
     if not district_name:
-        return JsonResponse({'error': '缺少参数：行政区名'}, status=400, json_dumps_params={'ensure_ascii': False})
+        district_name = 'all'
         
     # 获取该行政区的所有交易数据
     query = HouseDeal.objects.all()
@@ -515,7 +518,7 @@ def squaremeter_avgprice(request):
     city = request.GET.get('city')
     
     if not district_name:
-        return JsonResponse({'error': '缺少参数：行政区名'}, status=400, json_dumps_params={'ensure_ascii': False})
+        district_name = 'all'
         
     # 根据参数获取数据
     query = HouseDeal.objects.all()
