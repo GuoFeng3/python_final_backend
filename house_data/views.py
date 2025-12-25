@@ -138,7 +138,8 @@ def total_any(request):
             'median_unit_price': 0,
             'avg_deal_price': 0,
             'median_deal_price': 0,
-            'avg_area': 0
+            'avg_area': 0,
+            'deal_count': 0
         }, json_dumps_params={'ensure_ascii': False})
 
     # 数据清洗：确保面积大于0
@@ -153,7 +154,8 @@ def total_any(request):
         'median_unit_price': round(df['unit_price'].median(), 2),
         'avg_deal_price': round(df['deal_price'].mean(), 2),
         'median_deal_price': round(df['deal_price'].median(), 2),
-        'avg_area': round(df['area'].mean(), 2)
+        'avg_area': round(df['area'].mean(), 2),
+        'deal_count': len(df)
     }
     
     return JsonResponse(stats, json_dumps_params={'ensure_ascii': False})
@@ -229,9 +231,6 @@ def direction_price(request):
         
     # 数据清洗
     df = df[df['area'] > 0]
-    # 过滤掉 layout 为空的数据
-    df = df[df['layout'].notna()]
-    df = df[df['layout'] != 'nan']  # 确保字符串 'nan' 也被过滤
     
     # 计算单价
     df['unit_price'] = df['deal_price'] * 10000 / df['area']
@@ -623,8 +622,10 @@ def room_hall_any(request):
         
     # 数据清洗
     df = df[df['area'] > 0]
+    # 过滤掉 layout 为空的数据
     df = df[df['layout'].notna()]
-    df = df[df['layout'] != 'nan']
+    # 过滤掉字符串形式的 'nan', 'NaN', 'null' 等
+    df = df[~df['layout'].astype(str).str.lower().isin(['nan', 'none', 'null', ''])]
     # 计算单价
     df['unit_price'] = df['deal_price'] * 10000 / df['area']
     
