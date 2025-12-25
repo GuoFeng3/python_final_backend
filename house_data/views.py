@@ -229,6 +229,9 @@ def direction_price(request):
         
     # 数据清洗
     df = df[df['area'] > 0]
+    # 过滤掉 layout 为空的数据
+    df = df[df['layout'].notna()]
+    df = df[df['layout'] != 'nan']  # 确保字符串 'nan' 也被过滤
     
     # 计算单价
     df['unit_price'] = df['deal_price'] * 10000 / df['area']
@@ -620,7 +623,8 @@ def room_hall_any(request):
         
     # 数据清洗
     df = df[df['area'] > 0]
-    
+    df = df[df['layout'].notna()]
+    df = df[df['layout'] != 'nan']
     # 计算单价
     df['unit_price'] = df['deal_price'] * 10000 / df['area']
     
