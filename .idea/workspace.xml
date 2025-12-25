@@ -6,9 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="da4766a0-f94d-46bf-84d2-9164ef325d6e" name="更改" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/house_data/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/house_data/urls.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clear_data/chengjiao_chaoyang_朝阳_with_district_cleaned.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/clear_data/chengjiao_yanqing_延庆_with_district_cleaned.csv" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/house_data/management/commands/import_house.py" beforeDir="false" afterPath="$PROJECT_DIR$/house_data/management/commands/import_house.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/house_data/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/house_data/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/verify_total_any_district.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/verify_room_hall_any.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,18 +30,22 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "GuoFeng3"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;GuoFeng3&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/GuoFeng3/python_final_backend.git",
-    "accountId": "dd9059f5-aca3-4c87-9fe2-ac775732c759"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/GuoFeng3/python_final_backend.git&quot;,
+    &quot;accountId&quot;: &quot;dd9059f5-aca3-4c87-9fe2-ac775732c759&quot;
   }
-}]]></component>
+}</component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/clean_data_new/chengjiao_chaoyang_朝阳_cleaned.csv" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/clean_data_new/chengjiao_yanqing_延庆_cleaned.csv" root0="FORCE_HIGHLIGHTING" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
 }</component>
@@ -48,28 +54,31 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.OpenDjangoStructureViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "D:/pythonfinal/pythonfinal",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenDjangoStructureViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/pythonfinal/clean_data_new&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\pythonfinal\clean_data_new" />
+      <recent name="D:\pythonfinal\clear_data" />
       <recent name="D:\pythonfinal\pythonfinal" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\pythonfinal\clean_data_new" />
       <recent name="D:\pythonfinal" />
     </key>
   </component>
@@ -117,7 +126,10 @@
       <workItem from="1766221670399" duration="617000" />
       <workItem from="1766294111535" duration="5556000" />
       <workItem from="1766308632223" duration="116000" />
-      <workItem from="1766311645155" duration="15920000" />
+      <workItem from="1766311645155" duration="18691000" />
+      <workItem from="1766471397256" duration="35000" />
+      <workItem from="1766487779565" duration="2190000" />
+      <workItem from="1766535719857" duration="6468000" />
     </task>
     <servers />
   </component>

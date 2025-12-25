@@ -432,13 +432,18 @@ def predict_price(request):
     使用 Numpy 进行线性回归预测
     参数：district (行政区名，或 'all')
     参数：city (可选)
+    参数：layout (户型，可选，默认为'all')
     返回：未来三个月的预测均价
     """
     district_name = request.GET.get('district') or request.GET.get('行政区名')
     city = request.GET.get('city')
+    layout = request.GET.get('layout')
     
     if not district_name:
         district_name = 'all'
+        
+    if not layout:
+        layout = 'all'
         
     # 获取该行政区的所有交易数据
     query = HouseDeal.objects.all()
@@ -447,6 +452,9 @@ def predict_price(request):
         
     if district_name.lower() != 'all':
         query = query.filter(district=district_name)
+        
+    if layout.lower() != 'all':
+        query = query.filter(layout=layout)
         
     data = query.values('deal_date', 'deal_price', 'area')
     
@@ -626,12 +634,20 @@ def room_hall_any(request):
     stats.columns = ['layout', 'avg_unit_price', 'count']
     
     # 排序：按成交量降序
-    stats = stats.sort_values(by='count', ascending=False)
+    stats = stats.sort_values(by='avg_unit_price', ascending=False)
     
     # 格式化
     stats['avg_unit_price'] = stats['avg_unit_price'].round(2)
-    
+
     # 转换为字典列表
     result = stats.to_dict(orient='records')
+    result = [
+        {
+            'layout': row['layout'] if not pd.isna(row['layout']) else 0,
+            'avg_unit_price': row['avg_unit_price'] if not pd.isna(row['avg_unit_price']) else 0,
+            'count': row['count']
+        }
+        for row in result
+    ]
     
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False})

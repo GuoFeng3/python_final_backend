@@ -96,7 +96,7 @@ def import_single_csv(csv_path):
                         'direction': row['direction'],
                         'deal_price': row['deal_price'],
                         'deal_unit_price': row['deal_unit_price'] if row['deal_unit_price'] != '' else None,
-                        'city': row['city'] if  'city' in  row else '北京',
+                        'city': row['city'] if  'city' in  row else '重庆',
                     }
                 )
                 success_count += 1
@@ -122,7 +122,7 @@ class Command(BaseCommand):
         """
         命令执行的核心逻辑
         """
-        csv_dir = r"D:\pythonfinal\clear_data"  # CSV文件存放目录
+        csv_dir = r"D:\pythonfinal\clear_data_chongqing"  # CSV文件存放目录
         # 检查目录是否存在
         if not os.path.exists(csv_dir):
             self.stdout.write(self.style.ERROR(f"错误：目录{csv_dir}不存在，请检查路径是否正确"))
@@ -138,6 +138,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"共发现{len(csv_files)}个CSV文件，开始批量导入..."))
 
         for csv_file in csv_files:
+
             csv_path = os.path.join(csv_dir, csv_file)
             success_num = import_single_csv(csv_path)
             total_success += success_num
