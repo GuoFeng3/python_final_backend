@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="da4766a0-f94d-46bf-84d2-9164ef325d6e" name="更改" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/house_data/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/house_data/views.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/verify_room_hall_nan_fix.py" beforeDir="false" />
-    </list>
+    <list default="true" id="da4766a0-f94d-46bf-84d2-9164ef325d6e" name="更改" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -126,7 +122,7 @@
       <workItem from="1766311645155" duration="18691000" />
       <workItem from="1766471397256" duration="35000" />
       <workItem from="1766487779565" duration="2190000" />
-      <workItem from="1766535719857" duration="9002000" />
+      <workItem from="1766535719857" duration="9344000" />
     </task>
     <servers />
   </component>

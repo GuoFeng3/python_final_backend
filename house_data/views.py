@@ -1,9 +1,11 @@
 from django.shortcuts import render
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from .models import HouseDeal
 import pandas as pd
+import json
 import numpy as np
-from django.db.models import F
+from django.db.models import Count, Avg, F, FloatField, ExpressionWrapper
+from django.db.models.functions import TruncMonth
 from dateutil.relativedelta import relativedelta
 
 from django.views.decorators.csrf import csrf_exempt
@@ -329,48 +331,41 @@ def month_trend(request):
     if not district_name:
         district_name = 'all'
     
-    query = HouseDeal.objects.all()
+    # 1. 基础查询构造
+    query = HouseDeal.objects.filter(area__gt=0)
     if city:
         query = query.filter(city=city)
         
     if district_name.lower() != 'all':
         query = query.filter(district=district_name)
         
-    # 获取该行政区的所有交易数据
-    data = query.values('deal_date', 'deal_price', 'area')
+    # 2. 数据库聚合计算
+    # 使用 TruncMonth 将日期截断为月份
+    # 使用 ExpressionWrapper 计算每条记录的单价 (deal_price * 10000 / area)
+    # 然后按月份分组求平均值
+    trend_data = query.annotate(
+        month=TruncMonth('deal_date')
+    ).values('month').annotate(
+        avg_unit_price=Avg(
+            ExpressionWrapper(
+                F('deal_price') * 10000.0 / F('area'),
+                output_field=FloatField()
+            )
+        )
+    ).order_by('month')
     
-    df = pd.DataFrame(list(data))
-    
-    if df.empty:
-        return JsonResponse([], safe=False, json_dumps_params={'ensure_ascii': False})
-        
-    # 数据清洗
-    df = df[df['area'] > 0]
-    
-    # 计算单价
-    df['unit_price'] = df['deal_price'] * 10000 / df['area']
-    
-    # 转换日期为 datetime 类型
-    df['deal_date'] = pd.to_datetime(df['deal_date'])
-    
-    # 提取月份 (YYYY-MM)
-    df['month'] = df['deal_date'].dt.to_period('M').astype(str)
-    
-    # 按月份分组计算平均单价
-    monthly_stats = df.groupby('month')['unit_price'].mean().reset_index()
-    
-    # 保留两位小数
-    monthly_stats['unit_price'] = monthly_stats['unit_price'].round(2)
-    
-    # 按月份排序
-    monthly_stats = monthly_stats.sort_values(by='month')
-    
-    # 重命名列以符合通常的API习惯
-    monthly_stats.columns = ['month', 'avg_unit_price']
-    
-    # 转换为字典列表
-    result = monthly_stats.to_dict(orient='records')
-    
+    # 3. 结果格式化
+    result = []
+    for item in trend_data:
+        if item['month']:
+            month_str = item['month'].strftime('%Y-%m')
+            # 处理可能的 None 值
+            price = round(item['avg_unit_price'], 2) if item['avg_unit_price'] is not None else 0
+            result.append({
+                'month': month_str,
+                'avg_unit_price': price
+            })
+            
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False})
 
 def district_area_rank(request):
