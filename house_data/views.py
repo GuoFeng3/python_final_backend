@@ -242,21 +242,11 @@ def direction_price(request):
             # Python端简单清洗：去除空格
             direction = item['direction'].strip()
             price = round(item['avg_unit_price'], 2) if item['avg_unit_price'] is not None else 0
-            
-            # 简单的去重合并（如果数据库里有 ' 南 ' 和 '南'，这里会追加，前端可能看到重复。
-            # 完美的做法是数据库Trim，或者在Python端合并。
-            # 考虑到性能，先返回原样，或者在Python端做个简单的字典合并）
-            # 这里为了保持跟原逻辑一致（原逻辑是全部加载后清洗），我们可以在Python端聚合
-            # 但为了性能，我们假设数据相对干净，或者就在这里做个小合并
-            
-            # 让我们做一个Python端的后处理合并，因为数据量此时已经很小了（朝向种类很少）
             result.append({
                 'direction': direction,
                 'avg_unit_price': price
             })
             
-    # 如果存在 ' 南 ' 和 '南'，现在 result 里会有两条。我们再合并一次
-    # 使用字典合并同名项
     merged_data = {}
     for item in result:
         d = item['direction']
@@ -265,16 +255,6 @@ def direction_price(request):
             merged_data[d] = {'total': 0, 'count': 0}
         merged_data[d]['total'] += p
         merged_data[d]['count'] += 1
-        
-    # 重新生成列表 (注意：这里求的是平均值的平均值，可能略有偏差，但如果数据分布均匀则差别不大。
-    # 严谨做法是：Select Trim(direction) as clean_dir ... Group By clean_dir。
-    # 但Django Trim需要数据库支持。为了兼容性，且朝向数据通常整洁，这种偏差可接受)
-    # 实际上，原来的Pandas代码是先清洗后聚合，所以是准确的。
-    # 如果我们想准确，必须在DB层清洗。
-    # 鉴于用户要求优化速度，我们先用DB聚合。
-    
-    # 修正：直接返回结果，不做额外合并，除非发现明显重复。
-    # 大多数时候数据是干净的。
     
     return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False})
 
@@ -349,11 +329,6 @@ def month_trend(request):
         
     if district_name.lower() != 'all':
         query = query.filter(district=district_name)
-        
-    # 2. 数据库聚合计算
-    # 使用 TruncMonth 将日期截断为月份
-    # 使用 ExpressionWrapper 计算每条记录的单价 (deal_price * 10000 / area)
-    # 然后按月份分组求平均值
     trend_data = query.annotate(
         month=TruncMonth('deal_date')
     ).values('month').annotate(
@@ -364,8 +339,6 @@ def month_trend(request):
             )
         )
     ).order_by('month')
-    
-    # 3. 结果格式化
     result = []
     for item in trend_data:
         if item['month']:
@@ -454,7 +427,7 @@ def predict_price(request):
     参数：district (行政区名，或 'all')
     参数：city (可选)
     参数：layout (户型，可选，默认为'all')
-    返回：未来三个月的预测均价
+    返回：未来六个月的预测均价
     """
     district_name = request.GET.get('district') or request.GET.get('行政区名')
     city = request.GET.get('city')
@@ -503,37 +476,84 @@ def predict_price(request):
     if len(stats_list) < 2:
         return JsonResponse({'error': '数据不足，无法预测'}, status=400, json_dumps_params={'ensure_ascii': False})
         
-    # 3. 准备线性回归数据
-    x = np.arange(len(stats_list))
+    # 3. 准备特征预测模型数据
+    # 原始线性回归误差较大，升级为"趋势+季节性"特征预测模型
+    # 模型: Price = w0 + w1*t + w2*t^2 + w3*sin(m) + w4*cos(m)
+    n_samples = len(stats_list)
+    x_t = np.arange(n_samples)
     y = np.array([item['unit_price'] for item in stats_list])
     
-    # 使用 numpy.polyfit 进行一次多项式拟合（线性回归）
-    z = np.polyfit(x, y, 1)
-    p = np.poly1d(z)
+    predicted_data = []
     
-    # 4. 预测未来 3 个月
-    last_month_idx = x[-1]
-    future_x = np.array([last_month_idx + 1, last_month_idx + 2, last_month_idx + 3])
-    predicted_prices = p(future_x)
-    
-    # 获取最后一个月份，推算未来月份
-    # stats_list[-1]['month'] 是 date 对象 (TruncMonth返回date)
-    last_month = stats_list[-1]['month']
-    future_months = []
-    for i in range(1, 4):
-        # last_month 是 date, relativedelta 需要 datetime 或 date
-        next_month = last_month + relativedelta(months=i)
-        future_months.append(next_month.strftime('%Y-%m'))
+    # 只有当数据量足够时(>=6个点)才使用复杂模型，否则降级为二次多项式或线性回归
+    if n_samples >= 6:
+        # 提取月份特征 (1-12)
+        months = np.array([item['month'].month for item in stats_list])
         
-    # 5. 构造返回结果
-    result = []
-    for i in range(3):
-        result.append({
-            'month': future_months[i],
-            'predicted_price': round(predicted_prices[i], 2)
-        })
+        # 特征工程
+        X_bias = np.ones(n_samples)
+        X_t = x_t
+        X_t2 = x_t ** 2
+        X_sin = np.sin(2 * np.pi * months / 12)
+        X_cos = np.cos(2 * np.pi * months / 12)
         
-    return JsonResponse(result, safe=False, json_dumps_params={'ensure_ascii': False})
+        # 构造特征矩阵 (N, 5)
+        X = np.column_stack([X_bias, X_t, X_t2, X_sin, X_cos])
+        
+        # 求解最小二乘
+        # rcond=None 让 numpy 自动处理奇异值
+        w, _, _, _ = np.linalg.lstsq(X, y, rcond=None)
+        
+        # 预测未来 6 个月
+        last_month_date = stats_list[-1]['month']
+        
+        for i in range(1, 7):
+            next_date = last_month_date + relativedelta(months=i)
+            t_next = n_samples - 1 + i
+            m_next = next_date.month
+            
+            # 构造预测向量
+            feat = np.array([
+                1, 
+                t_next, 
+                t_next**2, 
+                np.sin(2 * np.pi * m_next / 12), 
+                np.cos(2 * np.pi * m_next / 12)
+            ])
+            
+            pred_price = np.dot(feat, w)
+            
+            # 防止价格预测为负数 (极端情况)
+            if pred_price < 0:
+                pred_price = 0
+                
+            predicted_data.append({
+                'month': next_date.strftime('%Y-%m'),
+                'predicted_price': round(pred_price, 2)
+            })
+            
+    else:
+        # 数据较少时，使用二次多项式拟合 (Quadratic Regression)
+        # 比单纯线性回归好，能捕捉一定弯曲趋势
+        deg = 2 if n_samples >= 3 else 1
+        z = np.polyfit(x_t, y, deg)
+        p = np.poly1d(z)
+        
+        last_month_date = stats_list[-1]['month']
+        for i in range(1, 7): # 6个月
+            next_date = last_month_date + relativedelta(months=i)
+            t_next = n_samples - 1 + i
+            pred_price = p(t_next)
+             # 防止价格预测为负数
+            if pred_price < 0:
+                pred_price = 0
+                
+            predicted_data.append({
+                'month': next_date.strftime('%Y-%m'),
+                'predicted_price': round(pred_price, 2)
+            })
+            
+    return JsonResponse(predicted_data, safe=False, json_dumps_params={'ensure_ascii': False})
 
 def squaremeter_avgprice(request):
     """
