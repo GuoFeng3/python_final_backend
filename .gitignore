@@ -26,12 +26,7 @@ venv.bak/
 *.swp
 *.swo
 
-# Project specific data and outputs
-analysis_results/
-clear_data/
-*.csv
-*.xlsx
-.tare
+# Project specific data and output
 
 # OS
 .DS_Store
