@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>房价预测模型对比</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f7fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            align-items: center;
+            gap: 15px;
+        }
+        select {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #chart {
+            width: 100%;
+            height: 600px;
+        }
+        .loading {
+            text-align: center;
+            font-size: 18px;
+            color: #666;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>房价预测模型对比分析</h1>
+        
+        <div class="controls">
+            <label for="district">选择城市：</label>
+            <select id="district">
+                <option value="北京">北京</option>
+                <option value="上海">上海</option>
+                <option value="重庆">重庆</option>
+                <option value="广州">广州</option>
+                
+            </select>
+            <button onclick="updateChart()">开始分析</button>
+        </div>
+
+        <div id="loading" class="loading">正在加载并计算预测结果，请稍候...</div>
+        <div id="chart"></div>
+    </div>
+
+    <script>
+        let myChart = echarts.init(document.getElementById('chart'));
+        
+        // 监听窗口大小变化
+        window.addEventListener('resize', function() {
+            myChart.resize();
+        });
+
+        // 页面加载完成后自动执行一次
+        window.onload = function() {
+            updateChart();
+        };
+
+        async function updateChart() {
+            const district = document.getElementById('district').value;
+            const loading = document.getElementById('loading');
+            const chartDiv = document.getElementById('chart');
+            
+            loading.style.display = 'block';
+            myChart.showLoading();
+
+            try {
+                // 定义四个接口 URL
+                const urls = [
+                    `/house-data/predict-price-linear/?city=${district}`,
+                    `/house-data/predict-price/?city=${district}`,
+                    `/house-data/predict-price-rnn/?city=${district}`,
+                    `/house-data/predict-price-lstm/?city=${district}`
+                ];
+                
+                const names = [
+                    '线性回归 (Linear)',
+                    '趋势特征回归 (Original)',
+                    'SimpleRNN',
+                    'LSTM'
+                ];
+
+                // 并行请求所有接口
+                // 使用 map 包装 fetch 请求以单独处理错误
+                const requests = urls.map((url, index) => 
+                    fetch(url)
+                        .then(async res => {
+                            if (!res.ok) {
+                                const text = await res.text();
+                                throw new Error(`Status ${res.status}: ${text.substring(0, 100)}`);
+                            }
+                            return res.json();
+                        })
+                        .catch(err => {
+                            console.error(`Error fetching ${names[index]} (${url}):`, err);
+                            return { error: err.message, is_failed: true };
+                        })
+                );
+
+                const responses = await Promise.all(requests);
+                
+                // 验证数据
+                const validResponses = responses.map((res, index) => {
+                    if (res.is_failed || res.error) {
+                        return null;
+                    }
+                    return res;
+                });
+
+                if (validResponses.every(r => r === null)) {
+                    alert('所有预测接口均返回错误，请检查数据源。');
+                    return;
+                }
+
+                // 提取历史数据 (假设第一个成功的响应包含正确的历史数据)
+                let historyData = [];
+                const firstValid = validResponses.find(r => r !== null);
+                if (firstValid && firstValid.history) {
+                    historyData = firstValid.history;
+                }
+
+                // 准备图表数据
+                const dates = historyData.map(item => item.month);
+                const historyPrices = historyData.map(item => item.price);
+                
+                // 获取所有预测数据的最大日期，扩展 X 轴
+                let allDates = [...dates];
+                const series = [];
+
+                // 添加历史数据系列
+                series.push({
+                    name: '历史实际均价',
+                    type: 'line',
+                    data: historyPrices,
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 6,
+                    itemStyle: { color: '#2c3e50' },
+                    lineStyle: { width: 3 }
+                });
+
+                // 处理四个预测结果
+                const colors = ['#e74c3c', '#e67e22', '#3498db', '#9b59b6'];
+                
+                validResponses.forEach((res, index) => {
+                    if (!res) return;
+
+                    const predData = res.prediction;
+                    if (!predData || predData.length === 0) return;
+
+                    // 扩展日期轴
+                    predData.forEach(p => {
+                        if (!allDates.includes(p.month)) {
+                            allDates.push(p.month);
+                        }
+                    });
+                });
+                
+                // 重新排序日期 (字符串排序即可，YYYY-MM格式)
+                allDates.sort();
+
+                // 为每个预测模型构建数据系列
+                // 预测线应该从历史数据的最后一个点开始连接
+                const lastHistoryDate = dates[dates.length - 1];
+                const lastHistoryPrice = historyPrices[historyPrices.length - 1];
+
+                validResponses.forEach((res, index) => {
+                    if (!res) return;
+                    
+                    const predData = res.prediction;
+                    // 构建与 allDates 长度相同的数组，填充 null，除了预测部分
+                    const seriesData = new Array(allDates.length).fill(null);
+                    
+                    // 找到历史数据最后一个点在 allDates 中的索引
+                    const lastHistoryIndex = allDates.indexOf(lastHistoryDate);
+                    if (lastHistoryIndex !== -1) {
+                        seriesData[lastHistoryIndex] = lastHistoryPrice;
+                    }
+
+                    // 填充预测数据
+                    predData.forEach(item => {
+                        const dateIndex = allDates.indexOf(item.month);
+                        if (dateIndex !== -1) {
+                            seriesData[dateIndex] = item.price; // 或者是 item.predicted_price，后端统一了 key 为 price
+                        }
+                    });
+
+                    series.push({
+                        name: names[index],
+                        type: 'line',
+                        data: seriesData,
+                        smooth: true,
+                        symbol: 'triangle', // 预测点用三角形
+                        lineStyle: {
+                            width: 2,
+                            type: 'dashed' // 预测线用虚线
+                        },
+                        itemStyle: {
+                            color: colors[index]
+                        },
+                        connectNulls: true // 连接空值点，确保从历史末尾连到预测开始
+                    });
+                });
+
+                // 配置 ECharts 选项
+                const option = {
+                    title: {
+                        text: `${district}区 房价预测模型对比`,
+                        subtext: '数据来源: 链家成交记录 (2023-01起)',
+                        left: 'center'
+                    },
+                    tooltip: {
+                        trigger: 'axis',
+                        axisPointer: {
+                            type: 'cross'
+                        }
+                    },
+                    legend: {
+                        data: ['历史实际均价', ...names],
+                        bottom: 10
+                    },
+                    grid: {
+                        left: '3%',
+                        right: '4%',
+                        bottom: '10%',
+                        containLabel: true
+                    },
+                    xAxis: {
+                        type: 'category',
+                        boundaryGap: false,
+                        data: allDates,
+                        axisLabel: {
+                            rotate: 45
+                        }
+                    },
+                    yAxis: {
+                        type: 'value',
+                        name: '均价 (元/㎡)',
+                        scale: true // 不从0开始，自动适应范围
+                    },
+                    series: series
+                };
+
+                myChart.setOption(option);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                alert('获取数据失败，请查看控制台错误信息。');
+            } finally {
+                loading.style.display = 'none';
+                myChart.hideLoading();
+            }
+        }
+    </script>
+</body>
+</html>

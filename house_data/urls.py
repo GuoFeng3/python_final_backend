@@ -11,7 +11,15 @@ urlpatterns = [
     #各行政区的各小区划（如昌平-长阳，昌平-回龙观）房价排名
     path('district-area-rank/', views.district_area_rank, name='district_area_rank'),
     # 线性回归模型预测未来三个月房价
+    path('predict-price-linear/', views.predict_price_linear, name='predict_price_linear'),
+   
     path('predict-price/', views.predict_price, name='predict_price'),
+     # 使用SimpleRNN预测未来房价
+    path('predict-price-rnn/', views.predict_price_rnn, name='predict_price_rnn'),
+    # 使用LSTM预测未来房价
+    path('predict-price-lstm/', views.predict_price_lstm, name='predict_price_lstm'),
+    # 预测模型对比页面
+    path('prediction-comparison/', views.prediction_comparison_view, name='prediction_comparison'),
     # 各城区按平米区间计算平米单价 如：50-70平米，70-100平米，100-200平米
     path('squaremeter-avgprice/', views.squaremeter_avgprice, name='squaremeter_avgprice'),
     # 各城区按季度（如：2023Q1，2023年Q2）计算交易趋势
